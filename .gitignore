@@ -1,0 +1,27 @@
+# Model checkpoints and large data
+/torchtune/models/
+/torchtune/data/train_data/
+/torchtune/data/eval_data/
+/torchtune/pretrained_models/
+/pretrained_models/
+
+# Generated outputs and logs
+/torchtune/output/
+/torchtune/logs/
+/torchtune/recipes/output/
+/torchtune/recipes/models/
+/torchtune/recipes/logs/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Internal / tooling
+CLAUDE.md
+.env
+*.log

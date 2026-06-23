@@ -1,0 +1,116 @@
+# Config for AttnBias-only training (no ISE segment embeddings).
+# Trains llama3_1_8b_attnbias from the base model using the same IH dataset
+# as ISE, so results are directly comparable.
+#
+# To launch on 4 GPUs:
+#   cd recipes
+#   tune run --nproc_per_node 4 full_finetune_distributed \
+#     --config configs/llama3_1/8B_full_IHT_attnbias_only.yaml
+
+
+# Tokenizer
+tokenizer:
+  _component_: torchtune.models.llama3.llama3_tokenizer
+  path: ../pretrained_models/llama3_1_8B_base/original/tokenizer.model
+
+
+# Dataset
+dataset:
+  - _component_: torchtune.datasets.InstructHierarchySeg
+    source: ../data/train_data/ultrachat-190K-final.json
+    train_on_input: False
+    max_seq_len: 900
+  - _component_: torchtune.datasets.InstructHierarchySeg
+    source: ../data/train_data/data_instruction_10k.json
+    train_on_input: False
+    fraction: 0.2
+    max_seq_len: 900
+  - _component_: torchtune.datasets.InstructHierarchySeg
+    source: ../data/train_data/long_prompt_extract-10k.json
+    train_on_input: False
+    fraction: 0.02
+    max_seq_len: 900
+  - _component_: torchtune.datasets.InstructHierarchySeg
+    source: ../data/train_data/long_prompt_follow-10k.json
+    train_on_input: False
+    fraction: 0.2
+    max_seq_len: 900
+  - _component_: torchtune.datasets.InstructHierarchySeg
+    source: ../data/train_data/long_prompt_ori-10k.json
+    train_on_input: False
+    fraction: 0.5
+    max_seq_len: 900
+  - _component_: torchtune.datasets.InstructHierarchySeg
+    source: ../data/train_data/ultrachat-10k-split-final.json
+    train_on_input: False
+    max_seq_len: 900
+  - _component_: torchtune.datasets.InstructHierarchySeg
+    source: ../data/train_data/user_change_system-10k.json
+    train_on_input: False
+    fraction: 0.2
+    max_seq_len: 900
+  - _component_: torchtune.datasets.InstructHierarchySeg
+    source: ../data/train_data/user_conflict_system-10k.json
+    train_on_input: False
+    fraction: 0.02
+    max_seq_len: 900
+  - _component_: torchtune.datasets.InstructHierarchySeg
+    source: ../data/train_data/user_follow_system-10k.json
+    train_on_input: False
+    fraction: 0.5
+    max_seq_len: 900
+
+
+seed: 0
+shuffle: True
+
+# Model Arguments
+model:
+  _component_: torchtune.models.llama3_1.llama3_1_8b_attnbias
+
+checkpointer:
+  _component_: torchtune.utils.FullModelMetaCheckpointer
+  checkpoint_dir: ../pretrained_models/llama3_1_8B_base/original/
+  checkpoint_files: [
+    consolidated.00.pth
+  ]
+  recipe_checkpoint: null
+  output_dir: ../models/Llama-3_1-8B-base-IHT-attnbias-only/
+  model_type: LLAMA3
+resume_from_checkpoint: False
+
+# Fine-tuning arguments
+batch_size: 4
+epochs: 3
+
+optimizer:
+  _component_: torch.optim.AdamW
+  lr: 2e-5
+  foreach: False
+lr_scheduler:
+  _component_: torchtune.modules.get_cosine_schedule_with_warmup
+  num_warmup_steps: 100
+
+loss:
+  _component_: torch.nn.CrossEntropyLoss
+max_steps_per_epoch: null
+gradient_accumulation_steps: 4
+
+
+# Training env
+device: cuda
+
+# Memory management
+enable_activation_checkpointing: True
+memory_efficient_fsdp_wrap: True
+
+# Reduced precision
+dtype: bf16
+
+# Logging
+metric_logger:
+  _component_: torchtune.utils.metric_logging.DiskLogger
+  log_dir: ${output_dir}
+output_dir: ../output/Llama-3_1-8B-base-IHT-attnbias-only/
+log_every_n_steps: 1
+log_peak_memory_stats: False
